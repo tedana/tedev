@@ -1,0 +1,20 @@
+name: py37_env
+channels:
+    - defaults
+    - conda-forge
+dependencies:
+    - python=3.7
+    - pip
+    - pip:
+        - pytest
+        - numpy>=1.14
+        - scikit-learn
+        - scipy
+        - nilearn
+        - nibabel>=2.1.0
+        - versioneer
+        - pandas
+        - matplotlib
+        - duecredit
+        - sphinx-argparse
+        - numpydoc

@@ -1,0 +1,35 @@
+name: venv
+channels:
+    - defaults
+    - conda-forge
+dependencies:
+    - python=3.6
+    - pip
+    - lxml
+    - nose
+    - cython
+    - mkl
+    - sphinx
+    - patsy
+    - boto3
+    - pillow
+    - nose-timer
+    - pip:
+        - pytest
+        - pytest-cov
+        - codecov
+        - coverage
+        - coveralls
+        - flake8<3.0
+        - flake8-putty
+        - numpy>=1.14
+        - scikit-learn
+        - scipy
+        - nilearn
+        - nibabel>=2.1.0
+        - versioneer
+        - pandas
+        - matplotlib
+        - duecredit
+        - sphinx-argparse
+        - numpydoc
