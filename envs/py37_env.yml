@@ -6,15 +6,15 @@ dependencies:
     - python=3.7
     - pip
     - pip:
-        - pytest
-        - numpy>=1.14
-        - scikit-learn
-        - scipy
+        - duecredit
+        - matplotlib
         - nilearn
         - nibabel>=2.1.0
-        - versioneer
-        - pandas
-        - matplotlib
-        - duecredit
-        - sphinx-argparse
+        - numpy>=1.14
         - numpydoc
+        - pandas
+        - pytest
+        - scikit-learn
+        - scipy
+        - sphinx-argparse
+        - versioneer

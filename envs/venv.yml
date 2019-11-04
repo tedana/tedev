@@ -4,32 +4,33 @@ channels:
     - conda-forge
 dependencies:
     - python=3.6
-    - pip
-    - lxml
-    - nose
-    - cython
-    - mkl
-    - sphinx
-    - patsy
     - boto3
-    - pillow
+    - cython
+    - ipython
+    - lxml
+    - mkl
+    - nose
     - nose-timer
+    - patsy
+    - pillow
+    - pip
+    - sphinx
     - pip:
-        - pytest
-        - pytest-cov
         - codecov
         - coverage
         - coveralls
+        - duecredit
         - flake8<3.0
         - flake8-putty
+        - matplotlib
+        - nibabel>=2.1.0
+        - nilearn
         - numpy>=1.14
+        - numpydoc
+        - pandas
+        - pytest
+        - pytest-cov
         - scikit-learn
         - scipy
-        - nilearn
-        - nibabel>=2.1.0
-        - versioneer
-        - pandas
-        - matplotlib
-        - duecredit
         - sphinx-argparse
-        - numpydoc
+        - versioneer
