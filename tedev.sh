@@ -26,12 +26,15 @@ generate_tedana_dockerfile() {
         && curl -L -o TED.p06.tar.xz https://osf.io/fr6mx/download
         && tar xf TED.p06.tar.xz --no-same-owner -C /tmp/test/five-echo/
         && rm -f TED.p06.tar.xz'
+    generate_ipython_config="
+        /opt/conda/envs/venv/bin/ipython profile create
+        && sed -i 's/#c.InteractiveShellApp.extensions = \[\]/c.InteractiveShellApp.extensions = \['\''autoreload'\''\]/g' /root/.ipython/profile_default/ipython_config.py"
 
     docker run --rm kaczmarj/neurodocker:0.6.0 generate docker                 \
       --base debian:latest                                                     \
       --pkg-manager apt                                                        \
       --env LANG=C.UTF-8 LC_ALL=C.UTF-8                                        \
-      --install curl git wget bzip2 ca-certificates                            \
+      --install curl git wget bzip2 ca-certificates sed                        \
       --run "${clone_tedana}"                                                  \
       --workdir /tmp/src/tedana                                                \
       --copy ./envs/venv.yml /tmp/src/venv.yml                                 \
@@ -53,9 +56,10 @@ generate_tedana_dockerfile() {
       --run "${get_five_echo_data}"                                            \
       --run "${get_three_echo_reg}"                                            \
       --run "${get_five_echo_reg}"                                             \
+      --run "${generate_ipython_config}"                                       \
       --add-to-entrypoint "source activate venv"                               \
-      --copy "./tedev.sh" /tmp/src/tedev.sh                            \
-      --add-to-entrypoint "source /tmp/src/tedev.sh"                       \
+      --copy "./tedev.sh" /tmp/src/tedev.sh                                    \
+      --add-to-entrypoint "source /tmp/src/tedev.sh"                           \
       > Dockerfile
 }
 
@@ -65,8 +69,14 @@ build_tedana_image() {
     # Recreates local Dockerfile and rebuilds tedev:latest Docker image
     #
 
+    if [ ! -z "${1}" ]; then
+        tag="${1}"
+    else
+        tag=latest
+    fi
+
     generate_tedana_dockerfile
-    docker build --tag tedana/tedev:latest .
+    docker build --tag tedana/tedev:${tag} .
 }
 
 
@@ -87,18 +97,16 @@ cprint() {
 }
 
 
-check_tedana_outputs() {
+_check_tedana_outputs() {
     #
     # Runs tedana unit tests for specified Python version / virtual environment
     #
     # Required argments:
     #   dataset         name of dataset to use for testing. should be one of
     #                   [three-echo, five-echo]
-    #
+
     # confirm specification of three-echo or five-echo input
-    # confirm specification of three-echo or five-echo input
-    if [ -z "${1}" ] || { [ "${1}" != "three-echo" ] \
-                          && [ "${1}" != "five-echo" ]; }; then
+    if [ -z "${1}" ] || { [ "${1}" != "three-echo" ] && [ "${1}" != "five-echo" ]; }; then
         printf 'Must supply dataset name for checking integration test ' >&2
         printf 'outputs; must be one of [three-echo, five-echo]\n' >&2
         return
@@ -129,29 +137,58 @@ check_tedana_outputs() {
 }
 
 
+_run_integration_test() {
+    #
+    # Runs tedana integration tests for specified dataset
+    #
+    # Required argments:
+    #   dataset         name of dataset to use for testing. should be one of
+    #                   [three-echo, five-echo]
+
+    if [ -z "${1}" ] || { [ "${1}" != "three-echo" ] && [ "${1}" != "five-echo" ]; }; then
+        printf 'Must supply dataset name for running integration test; ' >&2
+        printf 'must be one of [three-echo, five-echo]\n' >&2
+        return
+    fi
+    ds=${1}
+    cprint "RUNNING INTEGRATION TESTS FOR DATASET: ${ds}"
+    source activate venv
+    python setup.py -q install
+    py.test tedana/tests/test_integration_${ds/-/_}.py
+    _check_tedana_outputs "${ds}"
+}
+
+
 run_integration_tests() {
+    #
+    # Runs tedana integration tests for both three-echo and five-echo datasets
+    #
+
     for ds in three-echo five-echo; do
-        cprint "RUNNING UNIT TESTS FOR ${ds} DATASET"
-        source activate venv
-        python setup.py -q install
-        py.test tedana/tests/test_integration_${ds/-/_}.py
-        check_tedana_outputs "${ds}"
+        _run_integration_test ${ds}
     done
 }
 
 
 run_unit_tests() {
+    #
+    # Runs tedana unit tests for Python 3.5, 3.6, and 3.7 environments
+    #
+
     for pyenv in venv py35_env py37_env; do
         cprint "RUNNING UNIT TESTS FOR PYTHON ENVIRONMENT: ${pyenv}"
         source activate ${pyenv}
         python setup.py -q install
         py.test --ignore-glob=tedana/tests/test_integration*.py tedana
     done
-
 }
 
 
 run_lint_tests() {
+    #
+    # Lints the tedana codebase
+    #
+
     cprint "LINTING TEDANA CODEBASE"
     source activate venv
     flake8 tedana
@@ -159,7 +196,20 @@ run_lint_tests() {
 
 
 run_all_tests() {
+    #
+    # Runs entire tedana test suite
+    #
+
+    if [ "${1}" == "five-echo" ]; then
+        runfive=true
+    fi
+
     run_lint_tests
     run_unit_tests
-    run_integration_tests
+    _run_integration_test three-echo
+    if [ "${runfive}" == "true" ]; then
+        _run_integration_test five-echo
+    fi
+
+    cprint "FINISHED RUNNING ALL TESTS! GREAT SUCCESS"
 }
